@@ -6,7 +6,7 @@ use rand::Rng;
 use uuid::Uuid;
 
 
-enum EntityType {
+pub enum EntityType {
     HumanIndividual,
     HumanHousehold,
     HumanOrganization,
@@ -36,7 +36,7 @@ impl EntityType {
     }
 }
 
-struct IAN {
+pub struct IAN {
     network_id: String,
     registry_id: String,
     contract_id: String,
@@ -47,7 +47,7 @@ struct IAN {
 }
 
 impl IAN {
-    fn new(network: &str, registry: &str, contract: &str, region: &str, entity_type: EntityType, entity: &str) -> Self {
+    pub fn new(network: &str, registry: &str, contract: &str, region: &str, entity_type: EntityType, entity: &str) -> Self {
         let mut hasher = DefaultHasher::new();
         network.hash(&mut hasher);
         registry.hash(&mut hasher);
@@ -68,7 +68,7 @@ impl IAN {
         }
     }
 
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         let data = format!(
             "{}{}{}{}{}{}{}",
             self.network_id,
@@ -94,7 +94,7 @@ impl IAN {
         let ian_uuid = Uuid::from_u128(combined_value.into());
 
         // Convert to uppercase and add a 2-character prefix
-        format!("IA-{}", ian_uuid.to_simple().to_string().to_uppercase())
+        format!("IA-{}", ian_uuid.simple().to_string().to_uppercase())
     }
 }
 

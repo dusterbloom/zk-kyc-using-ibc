@@ -1,5 +1,7 @@
 use cosmwasm_schema::{cw_serde, QueryResponses};
 
+use crate::state::Ian;
+
 #[cw_serde]
 pub struct InstantiateMsg {}
 
@@ -45,7 +47,7 @@ pub enum IbcBizExecuteMsg {
 pub enum QueryMsg {
     #[returns(HasKycedResponse)]
     HasKyced { address: String },
-    #[returns(HasKycedResponse)]
+    #[returns(ResolvedIanResponse)]
     ResolveIan { ian: String },
 }
 
@@ -55,6 +57,6 @@ pub struct HasKycedResponse {
 }
 
 #[cw_serde]
-pub struct ResolveIanResponse {
-    pub result: String,
+pub struct ResolvedIanResponse {
+    pub result: Ian,
 }

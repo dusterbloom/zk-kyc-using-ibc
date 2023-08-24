@@ -17,4 +17,8 @@ pub enum ContractError {
 
     #[error("Custom Error val: {val:?}")]
     CustomError { val: String },
+
+    #[error("Ian not Found")]
+    IanNotFound { },
+
 }
