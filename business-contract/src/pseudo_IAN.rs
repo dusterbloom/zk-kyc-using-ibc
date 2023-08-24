@@ -1,7 +1,6 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 
-use rand::Rng;
 
 use uuid::Uuid;
 
@@ -67,34 +66,27 @@ impl IAN {
             check_digits,
         }
     }
-
-    pub fn to_string(&self) -> String {
-        let data = format!(
-            "{}{}{}{}{}{}{}",
-            self.network_id,
-            self.registry_id,
-            self.contract_id,
-            self.region_id,
-            self.entity_type.to_code(),
-            self.entity_id,
-            self.check_digits
-        );
-
-        // Hash the concatenated data
-        let mut hasher = DefaultHasher::new();
-        data.hash(&mut hasher);
-        let digest = hasher.finish() as u128; // Cast to u128
-
-        // Generate a random value to combine with the hash
-        let mut rng = rand::thread_rng();
-        let random_value: u128 = rng.gen();
-
-        // Combine the hash and random value to create a UUID
-        let combined_value = digest ^ random_value;
-        let ian_uuid = Uuid::from_u128(combined_value.into());
-
-        // Convert to uppercase and add a 2-character prefix
-        format!("IA-{}", ian_uuid.simple().to_string().to_uppercase())
+    impl IAN {
+      pub  fn to_string(&self) -> String {
+            let data = format!(
+                "{}{}{}{}{}{}{}",
+                self.network_id,
+                self.registry_id,
+                self.contract_id,
+                self.region_id,
+                self.entity_type.to_code(),
+                self.entity_id,
+                self.check_digits
+            );
+    
+            // Hash the concatenated data
+            let mut hasher = DefaultHasher::new();
+            data.hash(&mut hasher);
+            let digest = hasher.finish() as u128;
+    
+            // Convert to uppercase and add a 2-character prefix
+            format!("IA-{}", digest.to_string().to_uppercase())
+        }
     }
 }
 
