@@ -1,12 +1,12 @@
+use crate::error::ContractError;
+use crate::msg::{ExecuteMsg, IbcQueryMsg};
 #[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
 use cosmwasm_std::{
-    DepsMut, Env, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
+    from_slice, to_binary, DepsMut, Env, IbcBasicResponse, IbcChannel, IbcChannelCloseMsg,
     IbcChannelConnectMsg, IbcChannelOpenMsg, IbcChannelOpenResponse, IbcOrder, IbcPacketAckMsg,
-    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, from_slice, WasmMsg, to_binary
+    IbcPacketReceiveMsg, IbcPacketTimeoutMsg, IbcReceiveResponse, WasmMsg,
 };
-use crate::error::{ContractError};
-use crate::msg::{IbcQueryMsg, ExecuteMsg};
 
 pub const IBC_VERSION: &str = "zk-1";
 
@@ -48,7 +48,6 @@ pub fn validate_order_and_version(
     Ok(())
 }
 
-
 /// Handles the `OpenInit` and `OpenTry` parts of the IBC handshake.
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_channel_open(
@@ -68,8 +67,7 @@ pub fn ibc_channel_connect(
 ) -> Result<IbcBasicResponse, ContractError> {
     validate_order_and_version(msg.channel(), msg.counterparty_version())?;
 
-    Ok(IbcBasicResponse::new()
-        .add_attribute("method", "ibc_channel_connect"))
+    Ok(IbcBasicResponse::new().add_attribute("method", "ibc_channel_connect"))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
@@ -85,7 +83,6 @@ pub fn ibc_channel_close(
         .add_attribute("channel", channel))
 }
 
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_receive(
     _deps: DepsMut,
@@ -95,7 +92,6 @@ pub fn ibc_packet_receive(
     Ok(IbcReceiveResponse::new().add_attribute("method", "ibc_packet_recieve"))
 }
 
-
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn ibc_packet_ack(
     _deps: DepsMut,
@@ -103,25 +99,31 @@ pub fn ibc_packet_ack(
     msg: IbcPacketAckMsg,
 ) -> Result<IbcBasicResponse, ContractError> {
     let original_packet: IbcQueryMsg = from_slice(&msg.original_packet.data)?;
-    
+
     let ack: bool = from_slice(&msg.acknowledgement.data)?;
 
     match original_packet {
-        IbcQueryMsg::Verify { address, .. } => acknowledge_query(env, ack, address),  
+        IbcQueryMsg::Verify { address, .. } => acknowledge_query(env, ack, address),
     }
 }
 
-pub fn acknowledge_query(env: Env, ack_result: bool, address: String) -> Result<IbcBasicResponse, ContractError> {
-    let msg = WasmMsg::Execute { 
+pub fn acknowledge_query(
+    env: Env,
+    ack_result: bool,
+    address: String,
+) -> Result<IbcBasicResponse, ContractError> {
+    let msg = WasmMsg::Execute {
         contract_addr: env.contract.address.into(),
-        msg: to_binary(&ExecuteMsg::IbcAcknowledgeKyc { is_valid: ack_result, address })?,
-        funds: vec![] 
+        msg: to_binary(&ExecuteMsg::IbcAcknowledgeKyc {
+            is_valid: ack_result,
+            address,
+        })?,
+        funds: vec![],
     };
 
     Ok(IbcBasicResponse::new()
         .add_attribute("method", "ibc_packet_ack")
-        .add_message(msg)
-    )
+        .add_message(msg))
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
