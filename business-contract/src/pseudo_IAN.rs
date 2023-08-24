@@ -66,7 +66,6 @@ impl IAN {
             check_digits,
         }
     }
-    impl IAN {
       pub  fn to_string(&self) -> String {
             let data = format!(
                 "{}{}{}{}{}{}{}",
@@ -88,7 +87,6 @@ impl IAN {
             format!("IA-{}", digest.to_string().to_uppercase())
         }
     }
-}
 
 fn main() {
     let ian = IAN::new("ATOM","did:hid:z8uyZoEA2JTCMWfadrSPaqyWmwzwc3qAwAM4snVrfLKue","contract:localloops:cofi1grt939gj98g9kee6hq56wjhlauesx9a7p5r2ll", "CA", EntityType::HumanOrganization, "VAT12345657");
