@@ -1,14 +1,13 @@
-
-#[cfg(not(feature = "library"))]
 use cosmwasm_std::entry_point;
+
+use crate::{error::ContractError, msg::ExecuteMsg};
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env, IbcMsg, IbcTimeout, MessageInfo, Response, StdResult, StdError,
+    to_binary, Binary, Deps, DepsMut, Env,   MessageInfo, Response, StdResult, StdError,
 };
 use cw2::set_contract_version;
-use cosmwasm_schema::{cw_serde, QueryResponses};
-use pseudo_IAN::{IAN, EntityType};
+use pseudo_ian::{IAN, EntityType};
 
-use crate::{error::ContractError, state::{IANS_SEQ, WHITELIST_MAP, Ian, IANS}, msg::{InstantiateMsg, ExecuteMsg, IbcQueryMsg, QueryMsg, HasKycedResponse, ResolvedIanResponse}, pseudo_IAN};
+use crate::{state::{IANS_SEQ, WHITELIST_MAP, Ian, IANS}, msg::{InstantiateMsg, QueryMsg, HasKycedResponse, ResolvedIanResponse}, pseudo_ian};
 
 const CONTRACT_NAME: &str = "crates.io:business-contract";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -27,6 +26,23 @@ pub fn instantiate(
 }
 
 #[cfg_attr(not(feature = "library"), entry_point)]
+
+pub fn execute(
+    deps: DepsMut<'_>,
+    env: Env,
+    info: MessageInfo,
+    msg: ExecuteMsg,
+) -> Result<Response, ContractError> {
+match msg {
+    ExecuteMsg::Ian { owner_chain, owner_address, application_chain, application_address } => {
+        execute_ian_create(deps,owner_chain, owner_address, application_chain, application_address)
+    }
+    ExecuteMsg::IbcAcknowledgeKyc { is_valid, address  } =>  todo!(),
+
+    ExecuteMsg::Kyc { channel, proof, address, public_signal } => todo!(),
+}
+}
+
 pub fn execute_ian_create(
     deps: DepsMut,
     owner_chain: String,
@@ -65,7 +81,7 @@ pub fn execute_ian_create(
         id
     };
 
-   
+
 
     IANS.save(deps.storage, record.ian.to_string(), &record)?;
 
@@ -79,7 +95,7 @@ pub fn execute_ian_create(
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
     match msg {
         QueryMsg::HasKyced { address } => query_get_valid_address(deps, address),
-        QueryMsg::ResolveIan { ian } => query_resolver(deps,_env, ian),
+        QueryMsg::ResolveIan { ian } => query_resolver(deps, ian),
     }
 }
 
@@ -100,7 +116,7 @@ pub fn query_get_valid_address(deps: Deps, address: String) -> StdResult<Binary>
 }
 
 
-fn query_resolver(deps: Deps, _env: Env, ian: String) -> StdResult<Binary> {
+pub fn query_resolver(deps: Deps, ian: String) -> StdResult<Binary> {
     let ian_record = IANS.may_load(deps.storage, ian)?
         .ok_or_else(|| StdError::not_found("IAN"))?; // Return an error if not found
 

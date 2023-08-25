@@ -1,1 +1,1 @@
-19b6090cb7a04f63bf2def2c1a08c34af88943693b7833e66e8a4209ac348f56  business_contract.wasm
+1d2cde2da233c2e224e2bdc298bfc7a0e9c8e658da03258648f12c5177b92748  business_contract.wasm
