@@ -2,12 +2,16 @@ use cosmwasm_std::entry_point;
 
 use crate::{error::ContractError, msg::ExecuteMsg};
 use cosmwasm_std::{
-    to_binary, Binary, Deps, DepsMut, Env,   MessageInfo, Response, StdResult, StdError,
+    to_binary, Binary, Deps, DepsMut, Env, MessageInfo, Response, StdError, StdResult,
 };
 use cw2::set_contract_version;
-use pseudo_ian::{IAN, EntityType};
+use pseudo_ian::IAN;
 
-use crate::{state::{IANS_SEQ, WHITELIST_MAP, Ian, IANS}, msg::{InstantiateMsg, QueryMsg, HasKycedResponse, ResolvedIanResponse}, pseudo_ian};
+use crate::{
+    msg::{HasKycedResponse, InstantiateMsg, QueryMsg, ResolvedIanResponse},
+    pseudo_ian,
+    state::{Ian, IANS, IANS_SEQ, WHITELIST_MAP},
+};
 
 const CONTRACT_NAME: &str = "crates.io:business-contract";
 const CONTRACT_VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -29,19 +33,45 @@ pub fn instantiate(
 
 pub fn execute(
     deps: DepsMut<'_>,
-    env: Env,
-    info: MessageInfo,
+    _env: Env,
+    _info: MessageInfo,
     msg: ExecuteMsg,
 ) -> Result<Response, ContractError> {
-match msg {
-    ExecuteMsg::Ian { owner_chain, owner_address, application_chain, application_address } => {
-        execute_ian_create(deps,owner_chain, owner_address, application_chain, application_address)
-    }
-    ExecuteMsg::IbcAcknowledgeKyc { is_valid, address  } =>  todo!(),
+    match msg {
+        ExecuteMsg::Ian {
+            owner_chain,
+            owner_address,
+            application_chain,
+            application_address,
+            settlement_network,
+            settlement_address,
+            private,
+        } => execute_ian_create(
+            deps,
+            owner_chain,
+            owner_address,
+            application_chain,
+            application_address,
+            settlement_network,
+            settlement_address,
+            private,
+        ),
+        ExecuteMsg::IbcAcknowledgeKyc { is_valid, address } => todo!(),
 
-    ExecuteMsg::Kyc { channel, proof, address, public_signal } => todo!(),
+        ExecuteMsg::Kyc {
+            channel,
+            proof,
+            address,
+            public_signal,
+        } => todo!(),
+    }
 }
-}
+
+// Define valid owner chains (cryptocurrencies) and settlement networks
+const VALID_OWNER_CHAINS: &[&str] = &[
+    "BTC", "ETH", "COSMOS", "COFI", "HID", "CHEQD", "NAMADA", "AKASH",
+];
+const VALID_SETTLEMENT_NETWORKS: &[&str] = &["IBAN", "Visa", "Mastercard", "SIXD", "CASH"];
 
 pub fn execute_ian_create(
     deps: DepsMut,
@@ -49,10 +79,21 @@ pub fn execute_ian_create(
     owner_address: String,
     application_chain: String,
     application_address: String,
+    settlement_chain: String,
+    settlement_address: String,
+    private: bool,
 ) -> Result<Response, ContractError> {
+    // Validate owner chain
+    if !VALID_OWNER_CHAINS.contains(&owner_chain.as_str()) {
+        return Err(ContractError::InvalidOwnerChain {});
+    }
 
-    // Define the entity type based on your specific requirements
-    let entity_type = EntityType::HumanOrganization; // Example
+    // Validate settlement network (can be either a valid owner chain or a specific settlement network)
+    if !VALID_OWNER_CHAINS.contains(&settlement_chain.as_str())
+        && !VALID_SETTLEMENT_NETWORKS.contains(&settlement_chain.as_str())
+    {
+        return Err(ContractError::InvalidSettlementNetwork {});
+    }
 
     // Create the IAN
     let ian = IAN::new(
@@ -60,8 +101,8 @@ pub fn execute_ian_create(
         owner_address.as_str(),
         application_address.as_str(),
         application_chain.as_str(),
-        entity_type,
-        "VAT12345657" // Example entity ID
+        settlement_chain.as_str(),
+        settlement_address.as_str(),
     );
 
     // Convert the IAN to a string
@@ -77,19 +118,19 @@ pub fn execute_ian_create(
         owner_chain,
         application_address,
         application_chain,
+        settlement_chain,
+        settlement_address,
         ian: raw_ian,
-        id
+        id,
+        private,
     };
-
-
 
     IANS.save(deps.storage, record.ian.to_string(), &record)?;
 
-    Ok(Response::new().add_attribute("action", "ian_created"))
+    Ok(Response::new()
+        .add_attribute("action", "ian_created")
+        .add_attribute("ian", ian.to_string()))
 }
-
-
-
 
 #[cfg_attr(not(feature = "library"), entry_point)]
 pub fn query(deps: Deps, _env: Env, msg: QueryMsg) -> StdResult<Binary> {
@@ -115,16 +156,25 @@ pub fn query_get_valid_address(deps: Deps, address: String) -> StdResult<Binary>
     }
 }
 
-
 pub fn query_resolver(deps: Deps, ian: String) -> StdResult<Binary> {
-    let ian_record = IANS.may_load(deps.storage, ian)?
-        .ok_or_else(|| StdError::not_found("IAN"))?; // Return an error if not found
+    let ian_record = IANS
+        .may_load(deps.storage, ian)?
+        .ok_or_else(|| StdError::not_found("IAN not found"))?; // Return an error if not found
 
-    let resp = ResolvedIanResponse { result: ian_record };
+    // Check if the IAN is private
+    if ian_record.private {
+        // Return a limited response
+        return to_binary(&ResolvedIanResponse {
+            result: Err("IAN exists but it is private".to_string()),
+        });
+    }
+
+    let resp = ResolvedIanResponse {
+        result: Ok(ian_record),
+    };
 
     to_binary(&resp)
 }
-
 
 #[cfg(test)]
 mod tests {}

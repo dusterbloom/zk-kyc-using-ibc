@@ -22,9 +22,9 @@ pub enum ExecuteMsg {
         owner_address: String,
         application_chain: String,
         application_address: String,
-        // metadata: String,
-        // settlement_network: String,
-        // settlement_address: String,
+        settlement_network: String,
+        settlement_address: String,
+        private: bool, // metadata: String,
     },
 }
 
@@ -56,7 +56,11 @@ pub struct HasKycedResponse {
     pub result: String,
 }
 
+// #[cw_serde]
+// pub struct ResolvedIanResponse {
+//     pub result: Ian,
+// }
 #[cw_serde]
 pub struct ResolvedIanResponse {
-    pub result: Ian,
+    pub result: Result<Ian, String>, // Can be either the Ian object or a string message
 }

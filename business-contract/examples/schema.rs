@@ -18,7 +18,9 @@ use std::fs::create_dir_all;
 
 use cosmwasm_schema::{export_schema, remove_schemas, schema_for};
 
-use business_contract::msg::{ResolvedIanResponse,IbcQueryMsg,HasKycedResponse,ExecuteMsg, InstantiateMsg, QueryMsg};
+use business_contract::msg::{
+    ExecuteMsg, HasKycedResponse, IbcQueryMsg, InstantiateMsg, QueryMsg, ResolvedIanResponse,
+};
 use business_contract::state::Ian;
 
 fn main() {

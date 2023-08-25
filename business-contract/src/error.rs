@@ -19,6 +19,11 @@ pub enum ContractError {
     CustomError { val: String },
 
     #[error("Ian not Found")]
-    IanNotFound { },
+    IanNotFound {},
 
+    #[error("Invalid Owner Chain")]
+    InvalidOwnerChain {},
+
+    #[error("Invalid Settlement Network")]
+    InvalidSettlementNetwork {},
 }
